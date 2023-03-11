@@ -66,16 +66,12 @@ fn decode_buffer(buffer: &[u8]) -> String {
     assert!(buffer.len() % 2 == 0, "Number of bytes must be even");
     
     let mut result = String::from("bits 16\n");
-    for n in 0..buffer.len() / 2 {
-        result += "\n";
-        let offset = n*2;
-        let instruction = decode_instruction(buffer[offset]);
-        let _d = get_d_value(buffer[offset]);
-        let w = get_w_value(buffer[offset]);
-        let _mode = get_mod(buffer[offset + 1]);
-        let first_register = decode_first_register(buffer[offset + 1], w);
-        let second_register = decode_second_register(buffer[offset + 1], w);
-        result += &format!("{} {}, {}", instruction, first_register, second_register);
+    for chunk in buffer.chunks(2).map(|chunk| (chunk[0], chunk[1])) {
+        let instruction = decode_instruction(chunk.0);
+        let w = get_w_value(chunk.0);
+        let first_register = decode_first_register(chunk.1, w);
+        let second_register = decode_second_register(chunk.1, w);
+        result += &format!("\n{} {}, {}", instruction, first_register, second_register);
     }
     
     result
