@@ -1,7 +1,6 @@
-use clap::builder::Str;
 use clap::{arg, value_parser, Command};
 use std::path::PathBuf;
-use std::io::{Read};
+use std::io::Read;
 use std::fs::File;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -65,9 +64,9 @@ fn main() {
     for n in 0..buffer.len() / 2 {
         let offset = n*2;
         let instruction = decode_instruction(buffer[offset]);
-        let d = get_d_value(buffer[offset]);
+        let _d = get_d_value(buffer[offset]);
         let w = get_w_value(buffer[offset]);
-        let mode = get_mod(buffer[offset + 1]);
+        let _mode = get_mod(buffer[offset + 1]);
         let first_register = decode_first_register(buffer[offset + 1], w);
         let second_register = decode_second_register(buffer[offset + 1], w);
         println!("{} {}, {}", instruction, first_register, second_register);
