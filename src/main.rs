@@ -54,14 +54,20 @@ fn main() {
     let target_path = matches.get_one::<PathBuf>("f").expect("required");
 
     let mut target_file = File::open(target_path).unwrap();
-    
-    let mut buffer = Vec::new();
-    target_file.read_to_end(&mut buffer).unwrap();
 
     println!("Target File: {:?}", target_path);
+    let mut buffer = Vec::new();
+    target_file.read_to_end(&mut buffer).unwrap();
+    println!("{}", decode_buffer(&buffer));
+}
 
-    println!("bits 16\n");
+fn decode_buffer(buffer: &[u8]) -> String {
+    assert!(!buffer.is_empty(), "Empty files are not allowed");
+    assert!(buffer.len() % 2 == 0, "Number of bytes must be even");
+    
+    let mut result = String::from("bits 16\n");
     for n in 0..buffer.len() / 2 {
+        result += "\n";
         let offset = n*2;
         let instruction = decode_instruction(buffer[offset]);
         let _d = get_d_value(buffer[offset]);
@@ -69,8 +75,10 @@ fn main() {
         let _mode = get_mod(buffer[offset + 1]);
         let first_register = decode_first_register(buffer[offset + 1], w);
         let second_register = decode_second_register(buffer[offset + 1], w);
-        println!("{} {}, {}", instruction, first_register, second_register);
+        result += &format!("{} {}, {}", instruction, first_register, second_register);
     }
+    
+    result
 }
 
 
@@ -111,4 +119,7 @@ fn decode_second_register(data: u8, w: bool) -> String {
 }
 
 
-
+#[test]
+fn test_decode_mov() {
+    assert_eq!(decode_buffer(&vec![0x89, 0xd9]), "bits 16\n\nmov cx, bx")
+}
