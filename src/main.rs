@@ -98,7 +98,7 @@ fn get_w_value(data: u8) -> bool {
 }
 
 fn get_mod(data: u8) -> u8 {
-    (data & 0b1100_0000) >> 6
+    data >> 6
 }
 
 fn decode_first_register(data: u8, w: bool) -> String {
