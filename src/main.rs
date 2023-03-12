@@ -1,9 +1,9 @@
 use clap::{arg, value_parser, Command};
-use std::path::PathBuf;
-use std::io::Read;
-use std::fs::File;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Read;
+use std::path::PathBuf;
 
 lazy_static! {
     pub static ref W0_REGISTERS: HashMap<u8, String> = {
@@ -48,7 +48,11 @@ fn main() {
         .version("0.1.0")
         .author("4nc3str4l <murielmaths@gmail.com>")
         .about("An intel 8086 instruction set decoder")
-        .arg(arg!(--f <FILE>).required(true).value_parser(value_parser!(PathBuf)))
+        .arg(
+            arg!(--f <FILE>)
+                .required(true)
+                .value_parser(value_parser!(PathBuf)),
+        )
         .get_matches();
 
     let target_path = matches.get_one::<PathBuf>("f").expect("required");
@@ -64,19 +68,20 @@ fn main() {
 fn decode_buffer(buffer: &[u8]) -> String {
     assert!(!buffer.is_empty(), "Empty files are not allowed");
     assert!(buffer.len() % 2 == 0, "Number of bytes must be even");
-    
+
     let mut result = String::from("bits 16\n");
     for chunk in buffer.chunks(2).map(|chunk| (chunk[0], chunk[1])) {
         let instruction = decode_instruction(chunk.0);
         let w = get_w_value(chunk.0);
+        let _d = get_d_value(chunk.0);
+        let _mod = get_mod(chunk.1);
         let first_register = decode_first_register(chunk.1, w);
         let second_register = decode_second_register(chunk.1, w);
         result += &format!("\n{} {}, {}", instruction, first_register, second_register);
     }
-    
+
     result
 }
-
 
 fn decode_instruction(instruction: u8) -> String {
     match instruction >> 2 == 0b100010 {
@@ -98,22 +103,26 @@ fn get_mod(data: u8) -> u8 {
 }
 
 fn decode_first_register(data: u8, w: bool) -> String {
-    let reg2 = data & 0b00000111;
-    match w {
-        false => W0_REGISTERS[&reg2].to_owned(),
-        true => W1_REGISTERS[&reg2].to_owned(),
-    }
+    byte_to_register(data & 0b00000111, w)
 }
 
 fn decode_second_register(data: u8, w: bool) -> String {
     let remove_mod = data & 0b00111111;
-    let reg1 = remove_mod >> 3;
-    match w {
-        false => W0_REGISTERS[&reg1].to_owned(),
-        true => W1_REGISTERS[&reg1].to_owned(),
-    }
+    byte_to_register(remove_mod >> 3, w)
 }
 
+fn byte_to_register(byte: u8, w: bool) -> String {
+    match w {
+        false => match W0_REGISTERS.get(&byte) {
+            Some(register) => register.to_owned(),
+            None => panic!("Undefined register for {}", byte),
+        },
+        true => match W1_REGISTERS.get(&byte) {
+            Some(register) => register.to_owned(),
+            None => panic!("Undefined register for {}", byte),
+        },
+    }
+}
 
 #[test]
 fn test_decode_mov() {
